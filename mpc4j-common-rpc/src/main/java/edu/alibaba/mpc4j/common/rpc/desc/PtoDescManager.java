@@ -39,4 +39,15 @@ public class PtoDescManager {
         : "Existing PtoDesc contains new PtoName, please change to another PtoName: " + ptoDesc.getPtoName();
         PTO_NAME_MAP.put(ptoDesc.getPtoName(), ptoDesc);
     }
+
+    /**
+     * 输出所有已有的 协议ID映射 和 协议姓名映射
+     */
+    public static void printAllPtoDesc() {
+        System.out.println("RegisteredPto:");
+        System.out.println("PtoId Map:");
+        PTO_DESC_MAP.forEach((key, value) -> System.out.println(key + " : " + value.getPtoName()));
+        System.out.println("PtoName Map:");
+        PTO_NAME_MAP.forEach((key, value) -> System.out.println(key + " : " + value.getPtoId()));
+    }
 }
