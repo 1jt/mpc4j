@@ -252,9 +252,11 @@ public class PirUtils {
      */
     public static void generateIndexInputFiles(int elementSize, int retrievalSize)
         throws IOException {
+        boolean b_decidingWhetherToRegenerateIndexOrNot = false;
+        MathPreconditions.checkPositive("elementSize", elementSize);
         MathPreconditions.checkPositive("retrievalSize", retrievalSize);
-        File clientInputFile = new File(getClientFileName(BYTES_CLIENT_PREFIX, retrievalSize));
-        if (clientInputFile.exists()) {
+        File clientInputFile = new File(getClientFileName(BYTES_CLIENT_PREFIX, retrievalSize, elementSize));
+        if (clientInputFile.exists() && !b_decidingWhetherToRegenerateIndexOrNot) {
             return;
         }
         LOGGER.info("Lost some / all files, generate byte[] set files.");
@@ -296,6 +298,10 @@ public class PirUtils {
      */
     public static String getClientFileName(String prefix, int setSize) {
         return MainPtoConfigUtils.getFileFolderName() + prefix + "_" + prefix + "_" + setSize + ".input";
+    }
+
+    public static String getClientFileName(String prefix, int setSize, int elementSize) {
+        return MainPtoConfigUtils.getFileFolderName() + prefix + "_" + prefix + "_" + setSize + "_" + elementSize + ".input";
     }
 
     /**
