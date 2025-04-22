@@ -19,6 +19,9 @@ import edu.alibaba.mpc4j.s2pc.pir.cppir.index.mir.MirCpIdxPirServer;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.index.pai.PaiCpIdxPirClient;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.index.pai.PaiCpIdxPirConfig;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.index.pai.PaiCpIdxPirServer;
+import edu.alibaba.mpc4j.s2pc.pir.cppir.index.svpir.SVCpIdxPirClient;
+import edu.alibaba.mpc4j.s2pc.pir.cppir.index.svpir.SVCpIdxPirConfig;
+import edu.alibaba.mpc4j.s2pc.pir.cppir.index.svpir.SVCpIdxPirServer;
 
 /**
  * client-specific preprocessing index PIR factory.
@@ -70,6 +73,10 @@ public class CpIdxPirFactory implements PtoFactory {
          * MIR-based Plinko
          */
         MIR_PLINKO,
+        /**
+         * SV_PIR
+         */
+        SV_PIR,
     }
 
     /**
@@ -86,7 +93,7 @@ public class CpIdxPirFactory implements PtoFactory {
     public static int supportRoundQueryNum(CpIdxPirType type, int n) {
         return switch (type) {
             case FRODO, SIMPLE, DOUBLE, PAI -> Integer.MAX_VALUE;
-            case PIANO -> PianoCpIdxPirUtils.getRoundQueryNum(n);
+            case PIANO, SV_PIR -> PianoCpIdxPirUtils.getRoundQueryNum(n);
             case MIR -> MirCpIdxPirUtils.getRoundQueryNum(n);
             case PIANO_PLINKO -> PianoPlinkoCpIdxPirUtils.getRoundQueryNum(n);
             case MIR_PLINKO -> MirPlinkoCpIdxPirUtils.getRoundQueryNum(n);
@@ -128,6 +135,9 @@ public class CpIdxPirFactory implements PtoFactory {
             case MIR_PLINKO -> {
                 return new MirPlinkoCpIdxPirServer(serverRpc, clientParty, (MirPlinkoCpIdxPirConfig) config);
             }
+            case SV_PIR -> {
+                return new SVCpIdxPirServer(serverRpc, clientParty, (SVCpIdxPirConfig) config);
+            }
             default ->
                 throw new IllegalArgumentException("Invalid " + CpIdxPirType.class.getSimpleName() + ": " + type.name());
         }
@@ -167,6 +177,9 @@ public class CpIdxPirFactory implements PtoFactory {
             }
             case MIR_PLINKO -> {
                 return new MirPlinkoCpIdxPirClient(clientRpc, serverParty, (MirPlinkoCpIdxPirConfig) config);
+            }
+            case SV_PIR -> {
+                return new SVCpIdxPirClient(clientRpc, serverParty, (SVCpIdxPirConfig) config);
             }
             default ->
                 throw new IllegalArgumentException("Invalid " + CpIdxPirType.class.getSimpleName() + ": " + type.name());

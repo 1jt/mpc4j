@@ -11,6 +11,7 @@ import edu.alibaba.mpc4j.s2pc.pir.cppir.index.plinko.PianoPlinkoCpIdxPirConfig;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.index.simple.DoubleCpIdxPirConfig;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.index.simple.SimpleCpIdxPirConfig;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.index.mir.MirCpIdxPirConfig;
+import edu.alibaba.mpc4j.s2pc.pir.cppir.index.svpir.SVCpIdxPirConfig;
 
 import java.util.Properties;
 
@@ -60,6 +61,9 @@ class CpIdxPirConfigUtils {
             }
             case MIR_PLINKO -> {
                 return new MirPlinkoCpIdxPirConfig.Builder().build();
+            }
+            case SV_PIR -> {
+                return new SVCpIdxPirConfig.Builder().build();
             }
             default -> throw new IllegalArgumentException("Invalid " + CpIdxPirType.class.getSimpleName() + ": " + cpIdxPirType.name());
         }
