@@ -22,9 +22,21 @@ public class SVCpIdxPirPtoDesc implements PtoDesc {
          */
         SERVER_SEND_SEED,
         /**
+         * server sends the stream database request
+         */
+        SERVER_SEND_STREAM_DATABASE_REQUEST,
+        /**
+         * client sends the stream database response
+         */
+        CLIENT_SEND_STREAM_DATABASE_RESPONSE,
+        /**
          * client send query.
          */
-        CLIENT_SEND_QUERY,
+        CLIENT_SEND_QUERY_V,
+        /**
+         * client send query.
+         */
+        CLIENT_SEND_QUERY_S,
         /**
          * server send response.
          */
@@ -61,5 +73,5 @@ public class SVCpIdxPirPtoDesc implements PtoDesc {
     /**
      * LWE dimension, Frodo Section 5.2 of the paper requires n = 1774
      */
-    static final int N = 1774;
+    static final int N = 1024;
 }
