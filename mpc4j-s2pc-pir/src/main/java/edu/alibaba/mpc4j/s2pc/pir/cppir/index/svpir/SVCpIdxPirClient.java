@@ -22,6 +22,10 @@ import gnu.trove.map.hash.TIntObjectHashMap;
 import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
 
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -437,6 +441,7 @@ public class SVCpIdxPirClient extends AbstractCpIdxPirClient implements HintCpId
     @Override
     public byte[] recover(int x, int i) throws MpcAbortException {
         List<byte[]> responsePayload = receiveOtherPartyPayload(SVCpIdxPirPtoDesc.PtoStep.SERVER_SEND_RESPONSE.ordinal());
+        writeByteArraysToFile(responsePayload, n ,l);
         MpcAbortPreconditions.checkArgument(responsePayload.size() == SVCpIdxPirPtoDesc.N + 1);
         IntVector ans = IntVector.create(IntUtils.byteArrayToIntArray(responsePayload.remove(SVCpIdxPirPtoDesc.N)));
         IntVector[] hintVectors = responsePayload.stream()
@@ -480,4 +485,34 @@ public class SVCpIdxPirClient extends AbstractCpIdxPirClient implements HintCpId
 
     @Override
     public void update(int updateNum){}
+
+    public static void writeByteArraysToFile(List<byte[]> dataList, int n, int entryBitLength){
+        String filePath = "respondSize/SV_" + n + "_" + entryBitLength + ".txt";
+        File file = new File(filePath);
+        // 自动创建父目录（如果不存在）
+        File parentDir = file.getParentFile();
+        if (parentDir != null && !parentDir.exists()) {
+            parentDir.mkdirs();
+        }
+
+        // 如果文件不存在，则创建它
+        try {
+            if (!file.exists()) {
+                file.createNewFile();
+            }
+        } catch (IOException e) {
+            // 静默处理，或记录日志（推荐至少打印日志）
+            e.printStackTrace();
+        }
+
+
+        try (FileOutputStream fos = new FileOutputStream(file)) {
+            for (byte[] bytes : dataList) {
+                fos.write(bytes);
+            }
+        } catch (IOException e) {
+            // 静默处理，或记录日志（推荐至少打印日志）
+            e.printStackTrace();
+        }
+    }
 }

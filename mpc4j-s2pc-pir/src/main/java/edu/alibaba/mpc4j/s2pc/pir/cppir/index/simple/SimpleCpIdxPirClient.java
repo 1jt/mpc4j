@@ -10,6 +10,9 @@ import edu.alibaba.mpc4j.s2pc.pir.cppir.index.AbstractCpIdxPirClient;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.index.HintCpIdxPirClient;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.index.simple.SimpleCpIdxPirPtoDesc.PtoStep;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.List;
@@ -171,6 +174,7 @@ public class SimpleCpIdxPirClient extends AbstractCpIdxPirClient implements Hint
     @Override
     public byte[] recover(int x, int i) throws MpcAbortException {
         List<byte[]> responsePayload = receiveOtherPartyPayload(PtoStep.SERVER_SEND_RESPONSE.ordinal());
+        writeByteArraysToFile(responsePayload, n ,l);
         MpcAbortPreconditions.checkArgument(responsePayload.size() == partition);
         IntVector[] ansArray = responsePayload.stream()
             .map(ans -> IntVector.create(IntUtils.byteArrayToIntArray(ans)))
@@ -216,5 +220,34 @@ public class SimpleCpIdxPirClient extends AbstractCpIdxPirClient implements Hint
         long keyTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
         logStepInfo(PtoState.PTO_STEP, 1, 1, keyTime, "Client updates keys");
+    }
+    public static void writeByteArraysToFile(List<byte[]> dataList, int n, int entryBitLength){
+        String filePath = "respondSize/SIMPLE_" + n + "_" + entryBitLength + ".txt";
+        File file = new File(filePath);
+        // 自动创建父目录（如果不存在）
+        File parentDir = file.getParentFile();
+        if (parentDir != null && !parentDir.exists()) {
+            parentDir.mkdirs();
+        }
+
+        // 如果文件不存在，则创建它
+        try {
+            if (!file.exists()) {
+                file.createNewFile();
+            }
+        } catch (IOException e) {
+            // 静默处理，或记录日志（推荐至少打印日志）
+            e.printStackTrace();
+        }
+
+
+        try (FileOutputStream fos = new FileOutputStream(file)) {
+            for (byte[] bytes : dataList) {
+                fos.write(bytes);
+            }
+        } catch (IOException e) {
+            // 静默处理，或记录日志（推荐至少打印日志）
+            e.printStackTrace();
+        }
     }
 }

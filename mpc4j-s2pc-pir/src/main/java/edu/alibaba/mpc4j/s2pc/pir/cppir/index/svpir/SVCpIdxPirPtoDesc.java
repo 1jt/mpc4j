@@ -73,5 +73,5 @@ public class SVCpIdxPirPtoDesc implements PtoDesc {
     /**
      * LWE dimension, Frodo Section 5.2 of the paper requires n = 1774
      */
-    static final int N = 1024;
+    static final int N = 256;
 }

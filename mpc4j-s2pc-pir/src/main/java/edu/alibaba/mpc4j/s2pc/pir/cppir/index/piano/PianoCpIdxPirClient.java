@@ -16,6 +16,9 @@ import gnu.trove.map.hash.TIntObjectHashMap;
 import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -308,6 +311,7 @@ public class PianoCpIdxPirClient extends AbstractCpIdxPirClient implements Strea
             } else {
                 stopWatch.start();
                 List<byte[]> queryResponsePayload = receiveOtherPartyPayload(PtoStep.SERVER_SEND_RESPONSE.ordinal());
+                writeByteArraysToFile(queryResponsePayload, n ,l);
                 MpcAbortPreconditions.checkArgument(queryResponsePayload.size() == 1);
                 byte[] responseByteArray = queryResponsePayload.get(0);
                 MpcAbortPreconditions.checkArgument(responseByteArray.length == byteL * chunkNum);
@@ -406,5 +410,35 @@ public class PianoCpIdxPirClient extends AbstractCpIdxPirClient implements Strea
         }
 
         logPhaseInfo(PtoState.PTO_END);
+    }
+
+    public static void writeByteArraysToFile(List<byte[]> dataList, int n, int entryBitLength){
+        String filePath = "respondSize/PIANO_" + n + "_" + entryBitLength + ".txt";
+        File file = new File(filePath);
+        // 自动创建父目录（如果不存在）
+        File parentDir = file.getParentFile();
+        if (parentDir != null && !parentDir.exists()) {
+            parentDir.mkdirs();
+        }
+
+        // 如果文件不存在，则创建它
+        try {
+            if (!file.exists()) {
+                file.createNewFile();
+            }
+        } catch (IOException e) {
+            // 静默处理，或记录日志（推荐至少打印日志）
+            e.printStackTrace();
+        }
+
+
+        try (FileOutputStream fos = new FileOutputStream(file)) {
+            for (byte[] bytes : dataList) {
+                fos.write(bytes);
+            }
+        } catch (IOException e) {
+            // 静默处理，或记录日志（推荐至少打印日志）
+            e.printStackTrace();
+        }
     }
 }
