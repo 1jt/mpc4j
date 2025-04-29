@@ -9,6 +9,9 @@ import edu.alibaba.mpc4j.s2pc.pir.cppir.ks.alpr21.Alpr21CpKsPirServer;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.ks.chalamet.ChalametCpKsPirClient;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.ks.chalamet.ChalametCpKsPirConfig;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.ks.chalamet.ChalametCpKsPirServer;
+import edu.alibaba.mpc4j.s2pc.pir.cppir.ks.cul.SingleCulSseClient;
+import edu.alibaba.mpc4j.s2pc.pir.cppir.ks.cul.SingleCulSseConfig;
+import edu.alibaba.mpc4j.s2pc.pir.cppir.ks.cul.SingleCulSseServer;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.ks.pai.PaiCpCksPirClient;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.ks.pai.PaiCpCksPirConfig;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.ks.pai.PaiCpCksPirServer;
@@ -64,6 +67,11 @@ public class CpKsPirFactory implements PtoFactory {
          * PGM-index
          */
         PGM_INDEX,
+
+        /**
+         * cul naive SSE
+         */
+        CUL_NAIVE,
     }
 
     /**
@@ -94,6 +102,9 @@ public class CpKsPirFactory implements PtoFactory {
             }
             case PGM_INDEX -> {
                 return new SimplePgmCpKsPirServer<>(serverRpc, clientParty, (SimplePgmCpKsPirConfig) config);
+            }
+            case CUL_NAIVE -> {
+                return new SingleCulSseServer<>(serverRpc, clientParty, (SingleCulSseConfig) config);
             }
             default -> throw new IllegalArgumentException("Invalid " + CpKsPirType.class.getSimpleName() + ": " + type.name());
         }
@@ -127,6 +138,9 @@ public class CpKsPirFactory implements PtoFactory {
             }
             case PGM_INDEX -> {
                 return new SimplePgmCpKsPirClient<>(clientRpc, serverParty, (SimplePgmCpKsPirConfig) config);
+            }
+            case CUL_NAIVE -> {
+                return new SingleCulSseClient<>(clientRpc, serverParty, (SingleCulSseConfig) config);
             }
             default -> throw new IllegalArgumentException("Invalid " + CpKsPirType.class.getSimpleName() + ": " + type.name());
         }

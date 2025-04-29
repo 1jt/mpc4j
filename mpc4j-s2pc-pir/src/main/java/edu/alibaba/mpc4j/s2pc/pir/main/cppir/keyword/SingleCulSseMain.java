@@ -30,8 +30,8 @@ import java.util.stream.IntStream;
  * @author Liqiang Peng
  * @date 2023/9/27
  */
-public class SingleCpKsPirMain extends AbstractMainTwoPartyPto {
-    private static final Logger LOGGER = LoggerFactory.getLogger(SingleCpKsPirMain.class);
+public class SingleCulSseMain extends AbstractMainTwoPartyPto {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SingleCulSseMain.class);
     /**
      * protocol name
      */
@@ -39,35 +39,19 @@ public class SingleCpKsPirMain extends AbstractMainTwoPartyPto {
     /**
      * type name
      */
-    public static final String PTO_TYPE_NAME = "SINGLE_CP_KS_PIR";
+    public static final String PTO_TYPE_NAME = "SINGLE_CUL_SSE";
     /**
-     * warmup entry bit length
+     * keyword num
      */
-    private static final int WARMUP_ELEMENT_BIT_LENGTH = 16;
-    /**
-     * warmup server set size
-     */
-    private static final int WARMUP_SERVER_SET_SIZE = 1 << 10;
-    /**
-     * warmup query num
-     */
-    private static final int WARMUP_QUERY_NUM = 1 << 5;
-    /**
-     * entry bit length
-     */
-    private final int entryBitLength;
+    private int keywordNum;
     /**
      * parallel
      */
     private final boolean parallel;
     /**
-     * server set sizes
+     * max value length
      */
-    private final int[] serverSetSizes;
-    /**
-     * server set size num
-     */
-    private final int serverSetSizeNum;
+    private final int maxValueLength = 100;
     /**
      * query num
      */
@@ -77,15 +61,11 @@ public class SingleCpKsPirMain extends AbstractMainTwoPartyPto {
      */
     private final CpKsPirConfig config;
 
-    public SingleCpKsPirMain(Properties properties, String ownName) {
+    public SingleCulSseMain(Properties properties, String ownName) {
         super(properties, ownName);
         // read common config
         LOGGER.info("{} read common config", ownRpc.ownParty().getPartyName());
-        entryBitLength = PropertiesUtils.readInt(properties, "entry_bit_length");
         parallel = PropertiesUtils.readBoolean(properties, "parallel");
-        int[] serverLogSetSizes = PropertiesUtils.readLogIntArray(properties, "server_log_set_size");
-        serverSetSizes = Arrays.stream(serverLogSetSizes).map(logSetSize -> 1 << logSetSize).toArray();
-        serverSetSizeNum = serverLogSetSizes.length;
         queryNum = PropertiesUtils.readInt(properties, "query_num");
         // read PTO config
         LOGGER.info("{} read PTO config", ownRpc.ownParty().getPartyName());
@@ -94,17 +74,12 @@ public class SingleCpKsPirMain extends AbstractMainTwoPartyPto {
 
     @Override
     public void runParty1(Rpc serverRpc, Party clientParty) throws IOException, MpcAbortException {
-        LOGGER.info("{} generate warm-up database file", serverRpc.ownParty().getPartyName());
-        PirUtils.generateBytesInputFiles(WARMUP_SERVER_SET_SIZE, WARMUP_ELEMENT_BIT_LENGTH);
-        LOGGER.info("{} generate database file", serverRpc.ownParty().getPartyName());
-        for (int i = 0 ; i < serverSetSizeNum; i++) {
-            PirUtils.generateBytesInputFiles(serverSetSizes[i], entryBitLength);
-        }
         LOGGER.info("{} create result file", serverRpc.ownParty().getPartyName());
         String filePath = MainPtoConfigUtils.getFileFolderName() + File.separator + PTO_TYPE_NAME
             + "_" + config.getPtoType().name()
             + "_" + appendString
-            + "_" + entryBitLength
+            + "_" + keywordNum
+            + "_" + maxValueLength
             + "_" + serverRpc.ownParty().getPartyId()
             + "_" + ForkJoinPool.getCommonPoolParallelism()
             + ".output";
@@ -117,83 +92,71 @@ public class SingleCpKsPirMain extends AbstractMainTwoPartyPto {
         LOGGER.info("{} ready for run", serverRpc.ownParty().getPartyName());
         serverRpc.connect();
         int taskId = 0;
-        warmupServer(serverRpc, clientParty, config, taskId);
-        taskId++;
-        for (int i = 0; i < serverSetSizeNum; i++) {
-            int serverSetSize = serverSetSizes[i];
-            byte[][] entries = readServerDatabase(serverSetSize, entryBitLength);
-            runServer(serverRpc, clientParty, config, taskId, parallel, entries, entryBitLength, queryNum, printWriter);
-            taskId++;
-        }
+
+        Map<String, byte[]> keywordValueMap = readServerDatabase();
+        runServer(serverRpc, clientParty, config, taskId, parallel, keywordValueMap, queryNum, printWriter);
+
         serverRpc.disconnect();
         printWriter.close();
         fileWriter.close();
     }
 
-    private byte[][] readServerDatabase(int n, int entryBitLength) throws IOException {
+    private Map<String, byte[]> readServerDatabase() throws IOException {
         LOGGER.info("Server read database");
         InputStreamReader inputStreamReader = new InputStreamReader(
-            new FileInputStream(PirUtils.getServerFileName(PirUtils.BYTES_SERVER_PREFIX, n, entryBitLength)),
+            new FileInputStream("cul_data/inverted_index1.csv"),
             CommonConstants.DEFAULT_CHARSET
         );
         BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
-        byte[][] entries = bufferedReader.lines()
-            .map(Hex::decode)
-            .toArray(byte[][]::new);
+        Map<String, byte[]> keywordValueMap = bufferedReader.lines()
+            .map(SingleCulSseMain::parseLineToEntry)
+            .collect(Collectors.toMap(
+                    Map.Entry::getKey,
+                    Map.Entry::getValue
+        ));
+
+        keywordNum = keywordValueMap.size();
+
         bufferedReader.close();
         inputStreamReader.close();
-        return entries;
+        return keywordValueMap;
     }
-
-    private void warmupServer(Rpc serverRpc, Party clientParty, CpKsPirConfig config, int taskId)
-        throws IOException, MpcAbortException {
-        byte[][] entries = readServerDatabase(WARMUP_SERVER_SET_SIZE, WARMUP_ELEMENT_BIT_LENGTH);
-        Map<String, byte[]> keywordValueMap = IntStream.range(0, WARMUP_SERVER_SET_SIZE)
-            .boxed()
-            .collect(Collectors.toMap(
-                String::valueOf,
-                i -> entries[i],
-                (a, b) -> b,
-                () -> new HashMap<>(WARMUP_SERVER_SET_SIZE)
-            ));
-        LOGGER.info(
-            "{}: serverSetSize = {}, entryBitLength = {}, queryNum = {}, parallel = {}",
-            serverRpc.ownParty().getPartyName(), WARMUP_SERVER_SET_SIZE, WARMUP_ELEMENT_BIT_LENGTH, WARMUP_QUERY_NUM,
-            false
-        );
-        CpKsPirServer<String> server = CpKsPirFactory.createServer(serverRpc, clientParty, config);
-        server.setTaskId(taskId);
-        server.setParallel(false);
-        server.getRpc().synchronize();
-        LOGGER.info("(warmup) {} init", server.ownParty().getPartyName());
-        server.init(keywordValueMap, WARMUP_ELEMENT_BIT_LENGTH);
-        server.getRpc().synchronize();
-        LOGGER.info("(warmup) {} execute", server.ownParty().getPartyName());
-        for (int i = 0; i < WARMUP_QUERY_NUM; i++) {
-            server.pir();
+    private static Map.Entry<String, byte[]> parseLineToEntry(String line) {
+        if (line == null || line.isEmpty()) {
+            return null;
         }
-        server.getRpc().synchronize();
-        server.getRpc().reset();
-        server.destroy();
-        LOGGER.info("(warmup) {} finish", server.ownParty().getPartyName());
+
+        String[] parts = line.split(",");
+        if (parts.length < 2) {
+            return null; // 必须至少有关键词 + 一个数据
+        }
+
+        String keyword = parts[0].trim();
+        byte[] values = new byte[(parts.length - 1) * 2];
+
+        for (int i = 1; i < parts.length; i++) {
+            String part = parts[i].trim();
+            int num = Integer.parseInt(part, 16);
+            if (num < 0 || num > 0xFFFF) {
+                throw new IllegalArgumentException("数值超出范围: " + num);
+            }
+            // 写入高位、低位
+            values[(i - 1) * 2] = (byte) ((num >> 8) & 0xFF);    // 高8位
+            values[(i - 1) * 2 + 1] = (byte) (num & 0xFF);
+        }
+
+        return new AbstractMap.SimpleEntry<>(keyword, values);
     }
 
     private void runServer(Rpc serverRpc, Party clientParty, CpKsPirConfig config, int taskId,
-                           boolean parallel, byte[][] entries, int entryBitLength, int queryNum,
+                           boolean parallel, Map<String, byte[]> keywordValueMap, int queryNum,
                            PrintWriter printWriter)
         throws MpcAbortException {
         LOGGER.info(
-            "{}: serverSetSize = {}, entryBitLength = {}, queryNum = {}, parallel = {}",
-            serverRpc.ownParty().getPartyName(), entries.length, entryBitLength, queryNum, parallel
+            "{}: keywordNum = {}, maxValueLength = {}, queryNum = {}, parallel = {}",
+            serverRpc.ownParty().getPartyName(), keywordNum, maxValueLength, queryNum, parallel
         );
-        Map<String, byte[]> keywordValueMap = IntStream.range(0, entries.length)
-            .boxed()
-            .collect(Collectors.toMap(
-                String::valueOf,
-                i -> entries[i],
-                (a, b) -> b,
-                () -> new HashMap<>(entries.length)
-            ));
+
         CpKsPirServer<String> server = CpKsPirFactory.createServer(serverRpc, clientParty, config);
         server.setTaskId(taskId);
         server.setParallel(parallel);
@@ -201,7 +164,8 @@ public class SingleCpKsPirMain extends AbstractMainTwoPartyPto {
         server.getRpc().reset();
         LOGGER.info("{} init", server.ownParty().getPartyName());
         stopWatch.start();
-        server.init(keywordValueMap, entryBitLength);
+        // TODO : right server.init(keywordValueMap); // need new interface
+        server.init(keywordValueMap, maxValueLength * Byte.SIZE);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -222,7 +186,7 @@ public class SingleCpKsPirMain extends AbstractMainTwoPartyPto {
         long ptoPayloadByteLength = server.getRpc().getPayloadByteLength();
         long ptoSendByteLength = server.getRpc().getSendByteLength();
         String info = server.ownParty().getPartyId()
-            + "\t" + entries.length
+            + "\t" + keywordValueMap.size()
             + "\t" + queryNum
             + "\t" + server.getParallel()
             + "\t" + ForkJoinPool.getCommonPoolParallelism()
@@ -237,17 +201,16 @@ public class SingleCpKsPirMain extends AbstractMainTwoPartyPto {
 
     @Override
     public void runParty2(Rpc clientRpc, Party serverParty) throws IOException, MpcAbortException {
-        LOGGER.info("{} generate warm-up index files", clientRpc.ownParty().getPartyName());
-        PirUtils.generateIndexInputFiles(WARMUP_SERVER_SET_SIZE, WARMUP_QUERY_NUM);
-        LOGGER.info("{} generate index files", clientRpc.ownParty().getPartyName());
-        for (int i = 0; i < serverSetSizeNum; i++) {
-            PirUtils.generateIndexInputFiles(serverSetSizes[i], queryNum);
-        }
         LOGGER.info("{} create result file", clientRpc.ownParty().getPartyName());
+        if (keywordNum == 0){
+            keywordNum = 318;
+        }
+        PirUtils.generateIndexInputFiles(keywordNum, queryNum);
         String filePath = MainPtoConfigUtils.getFileFolderName() + File.separator + PTO_TYPE_NAME
             + "_" + config.getPtoType().name()
             + "_" + appendString
-            + "_" + entryBitLength
+            + "_" + keywordNum
+            + "_" + maxValueLength
             + "_" + clientRpc.ownParty().getPartyId()
             + "_" + ForkJoinPool.getCommonPoolParallelism()
             + ".output";
@@ -260,39 +223,19 @@ public class SingleCpKsPirMain extends AbstractMainTwoPartyPto {
         LOGGER.info("{} ready for run", clientRpc.ownParty().getPartyName());
         clientRpc.connect();
         int taskId = 0;
-        warmupClient(clientRpc, serverParty, config, taskId);
-        taskId++;
-        for (int i = 0; i < serverSetSizeNum; i++) {
-            int serverSetSize = serverSetSizes[i];
-            List<Integer> indexList = readClientRetrievalIndexList(queryNum, serverSetSize);
-            runClient(clientRpc, serverParty, config, taskId, indexList, serverSetSize, entryBitLength, parallel, printWriter);
-            taskId++;
-        }
+
+        List<Integer> indexList = readClientRetrievalIndexList(queryNum, keywordNum);
+        runClient(clientRpc, serverParty, config, taskId, indexList, keywordNum, parallel, printWriter);
+
         clientRpc.disconnect();
         printWriter.close();
         fileWriter.close();
     }
 
-    private List<Integer> readClientRetrievalIndexList(int retrievalSize) throws IOException {
+    private List<Integer> readClientRetrievalIndexList(int retrievalSize, int keywordNum) throws IOException {
         LOGGER.info("Client read retrieval list");
         InputStreamReader inputStreamReader = new InputStreamReader(
-            new FileInputStream(PirUtils.getClientFileName(PirUtils.BYTES_CLIENT_PREFIX, retrievalSize)),
-            CommonConstants.DEFAULT_CHARSET
-        );
-        BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
-        List<Integer> indexList = bufferedReader.lines()
-            .map(Hex::decode)
-            .map(IntUtils::byteArrayToInt)
-            .collect(Collectors.toCollection(ArrayList::new));
-        bufferedReader.close();
-        inputStreamReader.close();
-        return indexList;
-    }
-
-    private List<Integer> readClientRetrievalIndexList(int retrievalSize, int elementSize) throws IOException {
-        LOGGER.info("Client read retrieval list");
-        InputStreamReader inputStreamReader = new InputStreamReader(
-                new FileInputStream(PirUtils.getClientFileName(PirUtils.BYTES_CLIENT_PREFIX, retrievalSize, elementSize)),
+                new FileInputStream(PirUtils.getClientFileName(PirUtils.BYTES_CLIENT_PREFIX, retrievalSize, keywordNum)),
                 CommonConstants.DEFAULT_CHARSET
         );
         BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
@@ -305,39 +248,14 @@ public class SingleCpKsPirMain extends AbstractMainTwoPartyPto {
         return indexList;
     }
 
-    private void warmupClient(Rpc clientRpc, Party serverParty, CpKsPirConfig config, int taskId)
-        throws IOException, MpcAbortException {
-        LOGGER.info(
-            "{}: serverSetSize = {}, entryBitLength = {}, queryNum = {}, parallel = {}",
-            clientRpc.ownParty().getPartyName(), WARMUP_SERVER_SET_SIZE, WARMUP_ELEMENT_BIT_LENGTH, WARMUP_QUERY_NUM,
-            false
-        );
-        List<Integer> indexList = readClientRetrievalIndexList(WARMUP_QUERY_NUM, WARMUP_SERVER_SET_SIZE);
-        CpKsPirClient<String> client = CpKsPirFactory.createClient(clientRpc, serverParty, config);
-        client.setTaskId(taskId);
-        client.setParallel(false);
-        client.getRpc().synchronize();
-        LOGGER.info("(warmup) {} init", client.ownParty().getPartyName());
-        client.init(WARMUP_SERVER_SET_SIZE, WARMUP_ELEMENT_BIT_LENGTH);
-        client.getRpc().synchronize();
-        LOGGER.info("(warmup) {} execute", client.ownParty().getPartyName());
-        for (int i = 0; i < WARMUP_QUERY_NUM; i++) {
-            client.pir(String.valueOf(indexList.get(i)));
-        }
-        client.getRpc().synchronize();
-        client.getRpc().reset();
-        client.destroy();
-        LOGGER.info("(warmup) {} finish", client.ownParty().getPartyName());
-    }
-
     private void runClient(Rpc clientRpc, Party serverParty, CpKsPirConfig config, int taskId,
-                           List<Integer> indexList, int serverSetSize, int entryBitLength, boolean parallel,
+                           List<Integer> indexList, int serverSetSize, boolean parallel,
                            PrintWriter printWriter)
-        throws MpcAbortException {
+            throws MpcAbortException, IOException {
         int queryNum = indexList.size();
         LOGGER.info(
-            "{}: serverSetSize = {}, entryBitLength = {}, queryNum = {}, parallel = {}",
-            clientRpc.ownParty().getPartyName(), serverSetSize, entryBitLength, queryNum, parallel
+            "{}: keywordNum = {}, queryNum = {}, parallel = {}",
+            clientRpc.ownParty().getPartyName(), keywordNum, queryNum, parallel
         );
         CpKsPirClient<String> client = CpKsPirFactory.createClient(clientRpc, serverParty, config);
         client.setTaskId(taskId);
@@ -346,7 +264,7 @@ public class SingleCpKsPirMain extends AbstractMainTwoPartyPto {
         client.getRpc().reset();
         LOGGER.info("{} init", client.ownParty().getPartyName());
         stopWatch.start();
-        client.init(serverSetSize, entryBitLength);
+        client.init(serverSetSize, keywordNum);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -357,8 +275,8 @@ public class SingleCpKsPirMain extends AbstractMainTwoPartyPto {
         client.getRpc().reset();
         LOGGER.info("{} execute", client.ownParty().getPartyName());
         stopWatch.start();
-        for (Integer integer : indexList) {
-            client.pir(String.valueOf(integer));
+        for (String keyword : readClientRetrievalKeywordList(indexList)) {
+            client.pir(String.valueOf(keyword));
         }
         stopWatch.stop();
         long ptoTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
@@ -378,5 +296,35 @@ public class SingleCpKsPirMain extends AbstractMainTwoPartyPto {
         client.getRpc().reset();
         client.destroy();
         LOGGER.info("{} finish", client.ownParty().getPartyName());
+    }
+
+    private static List<String> readClientRetrievalKeywordList(List<Integer> indexList) throws IOException {
+        LOGGER.info("Client read retrieval keyword list");
+        List<String> retrievalkeywordList = new ArrayList<>();
+
+        InputStreamReader inputStreamReader = new InputStreamReader(
+                new FileInputStream("cul_data/inverted_index1.csv"),
+                CommonConstants.DEFAULT_CHARSET);
+         BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
+
+        String line;
+        int currentLine = 0;
+        // 使用HashSet提高查找效率（如果需要处理大量索引）
+        Set<Integer> indexSet = new HashSet<>(indexList);
+        int maxIndex = Collections.max(indexList); // 找到最大的索引，避免读取不必要的内容
+
+        while ((line = bufferedReader.readLine()) != null && currentLine <= maxIndex) {
+            if (indexSet.contains(currentLine)) {
+                // 分割行，取第一个元素作为keyword
+                String[] parts = line.split(",");
+                if (parts.length > 0) {
+                    retrievalkeywordList.add(parts[0]);
+                }
+            }
+            currentLine++;
+        }
+
+
+        return retrievalkeywordList;
     }
 }

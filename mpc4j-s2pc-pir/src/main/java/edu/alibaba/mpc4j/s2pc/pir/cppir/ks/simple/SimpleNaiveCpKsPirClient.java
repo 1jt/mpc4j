@@ -102,14 +102,14 @@ public class SimpleNaiveCpKsPirClient<T> extends AbstractCpKsPirClient<T> implem
         return entries;
     }
 
-    private void query(T key) {
+    public void query(T key) {
         int[] xs = arity3ByteFusePosition.positions(key);
         for (int i = 0; i < arity3ByteFusePosition.arity(); i++) {
             simpleCpIdxPirClient.query(xs[i], i);
         }
     }
 
-    private byte[] decode(T key) throws MpcAbortException {
+    public byte[] decode(T key) throws MpcAbortException {
         int[] xs = arity3ByteFusePosition.positions(key);
         byte[][] entries = new byte[arity3ByteFusePosition.arity()][];
         entries[0] = simpleCpIdxPirClient.recover(xs[0], 0);

@@ -137,6 +137,12 @@ abstract class AbstractBloomFilter<T> implements BloomFilter<T> {
     }
 
     @Override
+    public void setStorage(byte[] storage) {
+        MathPreconditions.checkEqual("storage.length", "byteM", storage.length, CommonUtils.getByteLength(m));
+        System.arraycopy(storage, 0, this.storage, 0, storage.length);
+    }
+
+    @Override
     public int getM() {
         return m;
     }

@@ -100,7 +100,7 @@ public class SimpleNaiveCpKsPirServer<T> extends AbstractCpKsPirServer<T> implem
         logPhaseInfo(PtoState.PTO_END);
     }
 
-    private void answer() throws MpcAbortException {
+    public void answer() throws MpcAbortException {
         for (int i = 0; i < arity; i++) {
             simpleCpIdxPirServer.answer();
         }

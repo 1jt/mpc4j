@@ -1,33 +1,19 @@
 package edu.alibaba;
 
 
-import edu.alibaba.mpc4j.common.rpc.Rpc;
-import edu.alibaba.mpc4j.common.rpc.RpcPropertiesUtils;
-import edu.alibaba.mpc4j.common.rpc.desc.PtoDescManager;
 import edu.alibaba.mpc4j.common.rpc.main.MainPtoConfigUtils;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
-import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.common.tool.utils.PropertiesUtils;
-import edu.alibaba.mpc4j.s2pc.pir.cppir.index.simple.SimpleCpIdxPirPtoDesc;
 import edu.alibaba.mpc4j.s2pc.pir.main.cppir.index.CpIdxPirMain;
 import edu.alibaba.mpc4j.s2pc.pir.main.cppir.keyword.SingleCpKsPirMain;
-import edu.alibaba.mpc4j.s2pc.pir.main.kspir.SingleKsPirMain;
-import edu.alibaba.mpc4j.s2pc.pir.main.kwpir.StdKwPirMain;
+import edu.alibaba.mpc4j.s2pc.pir.main.cppir.keyword.SingleCulSseMain;
 
-import java.io.File;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Properties;
-import java.util.logging.ConsoleHandler;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Hello world!
  *
  */
-public class App 
+public class Cul
 {
     public static void main( String[] args )throws Exception
     {
@@ -84,6 +70,11 @@ public class App
             case SingleCpKsPirMain.PTO_TYPE_NAME:
                 SingleCpKsPirMain singleCpKsPirMain = new SingleCpKsPirMain(properties, ownName);
                 singleCpKsPirMain.runNetty();
+                break;
+            case SingleCulSseMain.PTO_TYPE_NAME:
+                SingleCulSseMain singleCulSseMain = new SingleCulSseMain(properties, ownName);
+                singleCulSseMain.runNetty();
+                System.out.println("SingleCulSseMain");
                 break;
             default:
                 throw new IllegalArgumentException("Invalid pto_type: " + ptoType);

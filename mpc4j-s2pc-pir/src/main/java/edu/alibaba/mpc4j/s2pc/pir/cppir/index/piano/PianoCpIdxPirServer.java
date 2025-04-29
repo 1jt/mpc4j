@@ -77,7 +77,7 @@ public class PianoCpIdxPirServer extends AbstractCpIdxPirServer implements Strea
         long paddingTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
         logStepInfo(
-            PtoState.INIT_STEP, 0, 1, paddingTime,
+            PtoState.INIT_STEP, 1, 2, paddingTime,
             String.format(
                 "Server sets params: n = %d, ChunkSize = %d, ChunkNum = %d, n (pad) = %d, Q = %d",
                 n, chunkSize, chunkNum, chunkSize * chunkNum, roundQueryNum

@@ -69,6 +69,16 @@ public abstract class AbstractCpKsPirServer<T> extends AbstractTwoPartyPto imple
         initState();
     }
 
+    protected  void setInitInput(Map<T, byte[]> keyValueMap, int maxBatchNum) {
+        MathPreconditions.checkPositive("keyValueMap.size()", keyValueMap.size());
+        this.l = 0;
+        n = keyValueMap.size();
+
+        MathPreconditions.checkPositive("max_batch_num", maxBatchNum);
+        this.maxBatchNum = maxBatchNum;
+        initState();
+    }
+
     protected void setPtoInput(int batchNum) {
         checkInitialized();
         MathPreconditions.checkPositiveInRangeClosed("batch_num", batchNum, maxBatchNum);

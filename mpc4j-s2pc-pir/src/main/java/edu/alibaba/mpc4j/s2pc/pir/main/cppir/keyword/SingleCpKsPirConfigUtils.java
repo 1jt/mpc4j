@@ -10,6 +10,7 @@ import edu.alibaba.mpc4j.s2pc.pir.cppir.ks.CpKsPirConfig;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.ks.CpKsPirFactory.CpKsPirType;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.ks.alpr21.Alpr21CpKsPirConfig;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.ks.chalamet.ChalametCpKsPirConfig;
+import edu.alibaba.mpc4j.s2pc.pir.cppir.ks.cul.SingleCulSseConfig;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.ks.pai.PaiCpCksPirConfig;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.ks.simple.SimplePgmCpKsPirConfig;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.ks.simple.SimpleBinCpKsPirConfig;
@@ -70,6 +71,8 @@ class SingleCpKsPirConfigUtils {
             case PGM_INDEX -> new SimplePgmCpKsPirConfig.Builder().build();
             case SIMPLE_BIN -> new SimpleBinCpKsPirConfig.Builder().build();
             case CHALAMET -> new ChalametCpKsPirConfig.Builder().build();
+
+            case CUL_NAIVE -> new SingleCulSseConfig.Builder().build();
         };
     }
 }
