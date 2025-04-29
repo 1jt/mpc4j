@@ -35,6 +35,7 @@
         <module>mpc4j-work-femur</module>
         <module>mpc4j-work-scape</module>
         <module>ljtest</module>
+        <module>mpc4j-cul-sse</module>
     </modules>
 
     <properties>
