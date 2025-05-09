@@ -51,6 +51,12 @@ public interface BloomFilter<T> extends Filter<T> {
     byte[] getStorage();
 
     /**
+     * Set the Bloom Filter storage.
+     *
+     */
+    void setStorage(byte[] storage);
+
+    /**
      * Gets total position num.
      *
      * @return total position num.

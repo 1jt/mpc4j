@@ -32,6 +32,10 @@ public class BloomFilterFactory {
          * distinct Bloom Filter
          */
         DISTINCT_BLOOM_FILTER,
+        /**
+         * configurable Bloom Filter
+         */
+        CONFIGURABLE_BLOOM_FILTER,
     }
 
     /**
@@ -49,6 +53,7 @@ public class BloomFilterFactory {
             case NAIVE_RANDOM_BLOOM_FILTER -> NaiveRandomBloomFilter.create(envType, maxSize, key);
             case SPARSE_RANDOM_BLOOM_FILTER -> SparseRandomBloomFilter.create(envType, maxSize, key);
             case DISTINCT_BLOOM_FILTER -> DistinctBloomFilter.create(envType, maxSize, key);
+            case CONFIGURABLE_BLOOM_FILTER -> ConfigurableBloomFilter.create(envType, maxSize, key);
         };
     }
 }

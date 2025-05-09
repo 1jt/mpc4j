@@ -59,6 +59,11 @@ public class FilterFactory {
          * Mobile Vacuum Filter
          */
         MOBILE_VACUUM_FILTER,
+
+        /**
+         * configurable Bloom Filter
+         */
+        CONFIGURABLE_BLOOM_FILTER,
     }
 
     /**
@@ -70,7 +75,7 @@ public class FilterFactory {
     public static int getHashKeyNum(FilterType type) {
         return switch (type) {
             case SET_FILTER -> SetFilter.HASH_KEY_NUM;
-            case NAIVE_RANDOM_BLOOM_FILTER, SPARSE_RANDOM_BLOOM_FILTER, DISTINCT_BLOOM_FILTER -> BloomFilter.getHashKeyNum();
+            case NAIVE_RANDOM_BLOOM_FILTER, SPARSE_RANDOM_BLOOM_FILTER, DISTINCT_BLOOM_FILTER , CONFIGURABLE_BLOOM_FILTER-> BloomFilter.getHashKeyNum();
             case NAIVE_CUCKOO_FILTER, MOBILE_CUCKOO_FILTER, NAIVE_VACUUM_FILTER, MOBILE_VACUUM_FILTER -> CuckooFilter.getHashKeyNum();
         };
     }
@@ -91,6 +96,7 @@ public class FilterFactory {
             case NAIVE_RANDOM_BLOOM_FILTER -> NaiveRandomBloomFilter.create(envType, maxSize, keys[0]);
             case SPARSE_RANDOM_BLOOM_FILTER -> SparseRandomBloomFilter.create(envType, maxSize, keys[0]);
             case DISTINCT_BLOOM_FILTER -> DistinctBloomFilter.create(envType, maxSize, keys[0]);
+            case CONFIGURABLE_BLOOM_FILTER -> ConfigurableBloomFilter.create(envType, maxSize, keys[0]);
             case NAIVE_CUCKOO_FILTER -> NaiveCuckooFilter.create(envType, maxSize, keys);
             case MOBILE_CUCKOO_FILTER -> MobileCuckooFilter.create(envType, maxSize, keys);
             case NAIVE_VACUUM_FILTER -> NaiveVacuumFilter.create(envType, maxSize, keys);
@@ -130,6 +136,7 @@ public class FilterFactory {
             case NAIVE_RANDOM_BLOOM_FILTER -> NaiveRandomBloomFilter.load(envType, byteArrayList);
             case SPARSE_RANDOM_BLOOM_FILTER -> SparseRandomBloomFilter.load(envType, byteArrayList);
             case DISTINCT_BLOOM_FILTER -> DistinctBloomFilter.load(envType, byteArrayList);
+            case CONFIGURABLE_BLOOM_FILTER -> ConfigurableBloomFilter.load(envType, byteArrayList);
             case NAIVE_CUCKOO_FILTER -> NaiveCuckooFilter.load(envType, byteArrayList);
             case MOBILE_CUCKOO_FILTER -> MobileCuckooFilter.load(envType, byteArrayList);
             case NAIVE_VACUUM_FILTER -> NaiveVacuumFilter.load(envType, byteArrayList);
