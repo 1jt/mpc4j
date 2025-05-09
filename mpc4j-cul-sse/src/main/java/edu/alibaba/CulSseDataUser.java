@@ -4,23 +4,23 @@ import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.pto.MultiPartyPto;
 
+import java.util.ArrayList;
 import java.util.Map;
 
 public interface CulSseDataUser<T> extends MultiPartyPto {
     /**
-     * Get Server
-     */
-    Party getServer();
-
-    /**
      * Get Data Owner
      */
-    Party getDataOwner();
+    default Party getDataOwner(){
+        return otherParties()[0];
+    }
 
     /**
-     * Get Other Data Users
+     * Get Server
      */
-    Party[] getOtherDataUsers();
+    default Party getServer(){
+        return otherParties()[1];
+    }
 
     /**
      * DataUser initializes the protocol.
@@ -43,18 +43,22 @@ public interface CulSseDataUser<T> extends MultiPartyPto {
 
     /**
      * Server executes the protocol.
-     *
-     * @param batchNum batch num.
+     * @param keys keyword array
+     * @return retrieval results.
      * @throws MpcAbortException the protocol failure aborts.
      */
-    void sse(int batchNum) throws MpcAbortException;
+    byte[][] sse(ArrayList<T> keys) throws MpcAbortException;
 
     /**
      * Server executes the protocol.
-     *
+     * @param key keyword.
+     * @return retrieval results.
      * @throws MpcAbortException the protocol failure aborts.
      */
-    default void sse() throws MpcAbortException {
-        sse(1);
+    default byte[] sse(T key) throws MpcAbortException {
+        ArrayList<T> xs = new ArrayList<>(1);
+        xs.add(key);
+        byte[][] temp = sse(xs);
+        return temp[0];
     }
 }

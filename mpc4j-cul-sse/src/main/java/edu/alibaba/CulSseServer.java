@@ -10,12 +10,16 @@ public interface CulSseServer<T> extends MultiPartyPto {
     /**
      * Get Data Owner
      */
-    Party getDataOwner();
+    default Party getDataOwner(){
+        return otherParties()[0];
+    }
 
     /**
      * Get Data Users
      */
-    Party[] getDataUsers();
+    default Party getDataUsers(int userId){
+        return otherParties()[userId + 1];
+    }
 
     /**
      * Server initializes the protocol.

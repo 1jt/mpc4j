@@ -30,5 +30,11 @@
             <version>1.1.4-alpha</version>
             <scope>compile</scope>
         </dependency>
+        <dependency>
+            <groupId>edu.alibaba</groupId>
+            <artifactId>mpc4j-s2pc-pir</artifactId>
+            <version>1.1.4-alpha</version>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
 </project>

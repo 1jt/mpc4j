@@ -59,6 +59,7 @@ public abstract class AbstractCpKsPirServer<T> extends AbstractTwoPartyPto imple
         Arrays.fill(bot, (byte) 0xFF);
         BytesUtils.reduceByteArray(bot, this.l);
         botByteBuffer = ByteBuffer.wrap(bot);
+        // TODO: It makes no sense to judge k_i here
         keyValueMap.forEach((keyword, value) -> {
             ByteBuffer keywordByteBuffer = ByteBuffer.wrap(ObjectUtils.objectToByteArray(keyword));
             Preconditions.checkArgument(!keywordByteBuffer.equals(botByteBuffer), "k_i must not equal ⊥");

@@ -7,10 +7,10 @@ import edu.alibaba.mpc4j.common.rpc.desc.PtoDesc;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPto;
 import edu.alibaba.mpc4j.common.rpc.pto.MultiPartyPtoConfig;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.ObjectUtils;
 
 import java.nio.ByteBuffer;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -20,7 +20,7 @@ import java.util.Map;
  * @author Weiran Liu
  * @date 2023/8/25
  */
-public abstract class AbstractCulSseDataOwner<T> extends AbstractMultiPartyPto implements CulSseDataOwner<T> {
+public abstract class AbstractCulSseDataUser<T> extends AbstractMultiPartyPto implements CulSseDataUser<T> {
     /**
      * Constructs a cul sse protocol.
      *
@@ -29,8 +29,18 @@ public abstract class AbstractCulSseDataOwner<T> extends AbstractMultiPartyPto i
      * @param otherParties other parties.
      * @param config     config.
      */
-    protected AbstractCulSseDataOwner(PtoDesc ptoDesc, MultiPartyPtoConfig config, Rpc ownRpc, Party... otherParties) {
+    protected AbstractCulSseDataUser(PtoDesc ptoDesc, MultiPartyPtoConfig config, Rpc ownRpc, Party... otherParties) {
         super(ptoDesc, config, ownRpc, otherParties);
+    }
+
+    /**
+     * Sends payload to the data owner.
+     *
+     * @param stepId  step ID.
+     * @param payload payload.
+     */
+    protected void sendDataUserPayload(int stepId, List<byte[]> payload) {
+        sendPayload(stepId, getDataOwner(), payload);
     }
 
     /**
@@ -44,14 +54,13 @@ public abstract class AbstractCulSseDataOwner<T> extends AbstractMultiPartyPto i
     }
 
     /**
-     * Sends payload to the data user.
+     * Receives payload from the data owner.
      *
      * @param stepId  step ID.
-     * @param payload payload.
-     * @param userId data user ID.
+     * @return payload.
      */
-    protected void sendDataUserPayload(int stepId, List<byte[]> payload, int userId) {
-        sendPayload(stepId, getDataUsers(userId), payload);
+    protected List<byte[]> receiveDataOwnerPayload(int stepId) {
+        return receivePayload(stepId, getDataOwner());
     }
 
     /**
@@ -64,16 +73,6 @@ public abstract class AbstractCulSseDataOwner<T> extends AbstractMultiPartyPto i
         return receivePayload(stepId, getServer());
     }
 
-    /**
-     * Receives payload from the data user.
-     *
-     * @param stepId  step ID.
-     * @param dataUser data user.
-     * @return payload.
-     */
-    protected List<byte[]> receiveDataUserPayload(int stepId, Party dataUser) {
-        return receivePayload(stepId, dataUser);
-    }
 
     /**
      * keyword num
@@ -88,27 +87,21 @@ public abstract class AbstractCulSseDataOwner<T> extends AbstractMultiPartyPto i
      */
     protected int batchNum;
 
-    protected AbstractCulSseDataOwner(PtoDesc ptoDesc, Rpc dataownerRpc, SseConfig config, Party server, Party client){
-        super(ptoDesc, config, dataownerRpc, server, client);
-    }
 
-    protected void setInitInput(Map<T, byte[]> keyValueMap, int maxBatchNum) {
-        MathPreconditions.checkPositive("keywordNum", keyValueMap.size());
-        this.keywordNum = keyValueMap.size();
-        keyValueMap.forEach((keyword, value)->{
-            Preconditions.checkArgument(keyword != null, "k_i must not equal ⊥");
-            MathPreconditions.checkPositive("values", value.length);
-            MathPreconditions.checkEqual("the length of value", "even number Bytes", value.length % 2, 0);
-        });
-
+    protected void setInitInput(int keywordNum, int maxBatchNum) {
+        MathPreconditions.checkPositive("keywordNum", keywordNum);
+        this.keywordNum = keywordNum;
         MathPreconditions.checkPositive("max_batch_num", maxBatchNum);
         this.maxBatchNum = maxBatchNum;
         initState();
     }
 
-    protected void setPtoInput(int batchNum) {
+    protected void setPtoInput(ArrayList<T> keys) {
         checkInitialized();
-        MathPreconditions.checkPositiveInRangeClosed("batch_num", batchNum, maxBatchNum);
-        this.batchNum = batchNum;
+        MathPreconditions.checkPositiveInRangeClosed("batch_num", keys.size(), maxBatchNum);
+        this.batchNum = keys.size();
+        for (T keyword : keys) {
+            Preconditions.checkArgument(keyword != null, "x must not equal ⊥");
+        }
     }
 }

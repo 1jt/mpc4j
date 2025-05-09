@@ -10,7 +10,9 @@ public interface CulSseDataOwner<T> extends MultiPartyPto {
     /**
      * Get Server
      */
-    Party getServer();
+    default Party getServer(){
+        return otherParties()[0];
+    }
 
     /**
      * Get Data Owner
@@ -18,9 +20,18 @@ public interface CulSseDataOwner<T> extends MultiPartyPto {
     Party getDataOwner();
 
     /**
-     * Get Data Users
+     * Get a Data Users
      */
-    Party[] getDataUsers();
+    default Party getDataUsers(int userId){
+        return otherParties()[userId + 1];
+    }
+
+    /**
+     * Get all Data Users
+     */
+    default Party[] getDataUsers(){
+        return otherParties();
+    };
 
     /**
      * DataOwner initializes the protocol.
