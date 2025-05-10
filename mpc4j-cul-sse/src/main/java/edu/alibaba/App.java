@@ -17,6 +17,7 @@ public class App
 {
     public static void main( String[] args ) throws IOException, MpcAbortException {
         System.out.println( "Hello World!" );
+        System.out.println( "Hello World!" );
         PropertiesUtils.loadLog4jProperties();
         Properties properties = PropertiesUtils.loadProperties(args[0]);
         String ownName = args[1];
