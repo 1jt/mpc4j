@@ -255,6 +255,9 @@ public class CulSseMain extends AbstractMainMultiPartyPto{
     @Override
     public void runParty3(Rpc duRpc, Party... otherParties) throws IOException, MpcAbortException {
         System.out.println("runParty3");
+        for (int setSizeIndex = 0; setSizeIndex < keywordSetSizeNum; setSizeIndex++) {
+            PirUtils.generateIndexInputFiles(keywordSetSizes[setSizeIndex], queryNum);
+        }
         String filePath = MainPtoConfigUtils.getFileFolderName() + File.separator + PTO_TYPE_NAME
                 + "_" + config.getPtoType().name()
                 + "_" + appendString
